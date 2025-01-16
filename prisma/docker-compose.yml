@@ -1,0 +1,16 @@
+version: "3.9" # Use a compatible version
+
+services:
+  postgres:
+    image: postgres:latest # Use the latest official PostgreSQL image
+    ports:
+      - "5432:5432" # Map host port 5432 to container port 5432
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Set your desired password
+      POSTGRES_USER: ${POSTGRES_USER} # Set your desired username
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Create a persistent volume for data
+    restart: always # Restart the container if it stops
+
+volumes:
+  postgres_data:
