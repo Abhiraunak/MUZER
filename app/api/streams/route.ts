@@ -12,11 +12,11 @@ const YT_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com\/(?:watch\?
 export async function POST(req: NextRequest) {
     try {
         const data = CreateStreamSchema.parse(await req.json());
-        const isYt = YT_REGEX.test(data.url);
+        const isYt = data.url.match(YT_REGEX)
 
         if (!isYt) {
             return NextResponse.json({
-                message: "Error while adding a stream"
+                message: "Wrong url format"
             }, {
                 status: 411
             });
@@ -24,13 +24,18 @@ export async function POST(req: NextRequest) {
 
         const extractedId = data.url.split("?v=")[1];
 
-        await prismaClient.stream.create({
+        const stream = await prismaClient.stream.create({
             data: {
                 userId: data.creatorId,
                 url: data.url,
                 extractedId,
                 type: "Youtube"
             }
+        });
+
+        return NextResponse.json({
+            message : "Added Stream",
+            id : stream.id
         })
 
     } catch (e) {
@@ -40,6 +45,7 @@ export async function POST(req: NextRequest) {
         }, {
             status: 411
         });
+
     }
 }
 
