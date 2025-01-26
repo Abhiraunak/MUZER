@@ -4,14 +4,18 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export function Redirect(){
+export function Redirect() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
     useEffect(() => {
+        if (status === "loading") return; // Avoid running logic during loading state
         if (status === "authenticated" && session?.user) {
-            router.push("/dashboard");
-          }
-        }, [session, status, router]);
+            router.replace("/dashboard"); // Redirect to dashboard
+        }
+    }, [session, status, router]);
     return null;
 }
+
+
+
