@@ -3,11 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Appbar } from "./Appbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { toast } from "sonner";
 import { YT_REGEX } from "../api/lib/utils";
+import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 
 interface Video {
     id: string;
@@ -23,11 +25,27 @@ interface Video {
     haveUpvoted: string;
 }
 
+const REFRESH_INTERVAL_MS = 10 * 1000;
+
 export default function Streamview({creatorId} : {creatorId : string})  {
     const [queue, setQueue] = useState<Video[]>([]);
     const [loading, setLoading] = useState(false);
     const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
+    const [isEmptyQueueDialogOpen, setIsEmptyQueueDialogOpen] = useState(false);
+
+
+    function refreshStream(){
+
+        
+    }
+
+    useEffect(() => {
+        refreshStream();
+        const interval = setInterval(() => {
+
+        }, REFRESH_INTERVAL_MS)
+    }, [])
 
     const handleSubmit = async ( e : React.FormEvent) => {
         e.preventDefault();
@@ -70,6 +88,12 @@ export default function Streamview({creatorId} : {creatorId : string})  {
         }
      
     } 
+
+    // add the logic for make the queue empty
+    const emptyQueue = async () => {
+        
+    }
+
     return (
         <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-200">
             <Appbar />
@@ -184,8 +208,33 @@ export default function Streamview({creatorId} : {creatorId : string})  {
                             </Card>
                         </div>
                     </div>
+
                 </div>
             </div>
+            <Dialog
+                open={isEmptyQueueDialogOpen}
+                onOpenChange={setIsEmptyQueueDialogOpen}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Empty Queue</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to empty the queue? This will remove all
+                            songs from the queue. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant={"outline"}
+                            onClick={() => setIsEmptyQueueDialogOpen(false)}
+                        >Cancle</Button>
+                        <Button
+                            onClick={emptyQueue}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >Empty Queue</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
