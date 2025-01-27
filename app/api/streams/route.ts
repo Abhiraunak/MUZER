@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prismaClient } from "../lib/db";
+import { YT_REGEX } from "../lib/utils"
 // @ts-ignore
 import youtubesearchapi from "youtube-search-api";
 
@@ -9,7 +10,6 @@ const CreateStreamSchema = z.object({
     url: z.string()
 })
 
-const YT_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com\/(?:watch\?(?!.*\blist=)(?:.*&)?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:[?&]\S+)?$/;
 
 export async function POST(req: NextRequest) {
     try {

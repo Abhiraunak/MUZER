@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { toast } from "sonner";
+import { YT_REGEX } from "../api/lib/utils";
 
 interface Video {
     id: string;
@@ -21,10 +23,53 @@ interface Video {
     haveUpvoted: string;
 }
 
-export default function Streamview() {
+export default function Streamview({creatorId} : {creatorId : string})  {
     const [queue, setQueue] = useState<Video[]>([]);
     const [loading, setLoading] = useState(false);
+    const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
+
+    const handleSubmit = async ( e : React.FormEvent) => {
+        e.preventDefault();
+        if(!inputLink.trim()){
+            toast.error("YouTube link cannot be empty");
+            return;
+        }
+        if(!inputLink.match(YT_REGEX)){
+            toast.error("Invalid YouTube URL format")
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch("/api/streams", {
+                method : "POST",
+                headers : {
+                    "Content-type" : "application/json"
+                },
+                body : JSON.stringify({
+                    creatorId,
+                    url : inputLink
+                }),
+            });
+            
+            const data = await res.json();
+            if(!res.ok){
+                throw new Error(data.message || "An error occurred")
+            }
+            setQueue([...queue, data]);
+            setInputLink("");
+            toast.success("Song added to queue successfully")
+        } catch (error) {
+            if(error instanceof Error){
+                toast.error(error.message);
+            } else {
+                toast.error("An unexpected error occured")
+            }
+        } finally {
+            setLoading(false)
+        }
+     
+    } 
     return (
         <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-200">
             <Appbar />
@@ -110,9 +155,11 @@ export default function Streamview() {
                             <Card className="bg-gray-800 border-gray-700 shadow-lg">
                                 <CardContent className="p-6 space-y-4">
                                     <h2 className="text-2xl font-semibold text-white">Add a Song</h2>
-                                    <form className="space-y-3">
+                                    <form onSubmit={handleSubmit} className="space-y-3">
                                         <Input
                                             type="text"
+                                            value={inputLink}
+                                            onChange={(e) => setInputLink(e.target.value)}
                                             placeholder="Paste youtube link here"
                                             className="bg-gray-700 text-white border-gray-600 placeholder-gray-400"
                                         />
