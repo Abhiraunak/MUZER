@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { YT_REGEX } from "../api/lib/utils";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
@@ -21,13 +21,14 @@ interface Video {
     bigImg: string;
     active: boolean;
     userId: string;
-    upvotes: string;
-    haveUpvoted: string;
+    upvotes: number;
+    haveUpvoted: boolean;
+    spaceId: string
 }
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
-export default function Streamview({creatorId} : {creatorId : string})  {
+export default function Streamview({ creatorId }: { creatorId: string }) {
     const [queue, setQueue] = useState<Video[]>([]);
     const [loading, setLoading] = useState(false);
     const [inputLink, setInputLink] = useState("");
@@ -35,9 +36,9 @@ export default function Streamview({creatorId} : {creatorId : string})  {
     const [isEmptyQueueDialogOpen, setIsEmptyQueueDialogOpen] = useState(false);
 
 
-    function refreshStream(){
+    function refreshStream() {
 
-        
+
     }
 
     useEffect(() => {
@@ -47,38 +48,38 @@ export default function Streamview({creatorId} : {creatorId : string})  {
         }, REFRESH_INTERVAL_MS)
     }, [])
 
-    const handleSubmit = async ( e : React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!inputLink.trim()){
+        if (!inputLink.trim()) {
             toast.error("YouTube link cannot be empty");
             return;
         }
-        if(!inputLink.match(YT_REGEX)){
+        if (!inputLink.match(YT_REGEX)) {
             toast.error("Invalid YouTube URL format")
             return;
         }
         setLoading(true);
         try {
             const res = await fetch("/api/streams", {
-                method : "POST",
-                headers : {
-                    "Content-type" : "application/json"
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json"
                 },
-                body : JSON.stringify({
+                body: JSON.stringify({
                     creatorId,
-                    url : inputLink
+                    url: inputLink
                 }),
             });
-            
+
             const data = await res.json();
-            if(!res.ok){
+            if (!res.ok) {
                 throw new Error(data.message || "An error occurred")
             }
             setQueue([...queue, data]);
             setInputLink("");
             toast.success("Song added to queue successfully")
         } catch (error) {
-            if(error instanceof Error){
+            if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error("An unexpected error occured")
@@ -86,24 +87,49 @@ export default function Streamview({creatorId} : {creatorId : string})  {
         } finally {
             setLoading(false)
         }
-     
-    } 
+
+    }
+
+    // handle the upvote and downvote 
+    const handleVote = (id: string, isUpvote: boolean) => {
+        setQueue(
+            queue
+                .map((video) =>
+                    video.id === id
+                        ? {
+                            ...video,
+                            upvotes: isUpvote ? video.upvotes + 1 : video.upvotes - 1,
+                            haveUpvoted: !video.haveUpvoted,
+                        }
+                        : video,
+                )
+                .sort((a, b) => b.upvotes - a.upvotes),
+        );
+
+        fetch(`/api/streams/${isUpvote ? "upvote" : "downvote"}`, {
+            method: "POST",
+            body: JSON.stringify({
+                streamId: id,
+                // spaceId:spaceId
+            }),
+        });
+    };
 
     // add the logic for make the queue empty
     const emptyQueue = async () => {
         try {
             const res = await fetch("/api/streams/empty-queue", {
-                method : "POST",
-                headers : {
-                    'content-type' : 'application/json'
+                method: "POST",
+                headers: {
+                    'content-type': 'application/json'
                 },
                 body: JSON.stringify({
                     // spaceId:spaceId
                 })
             });
-            
+
             const data = await res.json();
-            if(res.ok){
+            if (res.ok) {
                 toast.success(data.message);
                 refreshStream();
                 setIsEmptyQueueDialogOpen(false);
@@ -111,9 +137,40 @@ export default function Streamview({creatorId} : {creatorId : string})  {
                 toast.error(data.message || "Failed to empty queue")
             }
 
-        } catch(error) {
+        } catch (error) {
             console.error("Error empty queue", error);
             toast.error("An erro occured while empty the queue");
+        }
+    }
+
+    const handleShare = (platform: 'whatsapp' | 'twitter' | 'instagram' | 'clipboard') => {
+        const shareableLink = `${window.location.hostname}/spaces/${spaceId}`
+
+        if (platform === 'clipboard') {
+            navigator.clipboard.writeText(shareableLink).then(() => {
+                toast.success('Link copied to clipboard!')
+            }).catch((err) => {
+                console.error('Could not copy text: ', err)
+                toast.error('Failed to copy link. Please try again.')
+            })
+        } else {
+            let url
+            switch (platform) {
+                case 'whatsapp':
+                    url = `https://wa.me/?text=${encodeURIComponent(shareableLink)}`
+                    break
+                case 'twitter':
+                    url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareableLink)}`
+                    break
+                case 'instagram':
+                    // Instagram doesn't allow direct URL sharing, so we copy the link instead
+                    navigator.clipboard.writeText(shareableLink)
+                    toast.success('Link copied for Instagram sharing!')
+                    return
+                default:
+                    return
+            }
+            window.open(url, '_blank')
         }
     }
 
@@ -201,7 +258,11 @@ export default function Streamview({creatorId} : {creatorId : string})  {
                         <div className="space-y-4">
                             <Card className="bg-gray-800 border-gray-700 shadow-lg">
                                 <CardContent className="p-6 space-y-4">
-                                    <h2 className="text-2xl font-semibold text-white">Add a Song</h2>
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="text-2xl font-semibold text-white">Add a Song</h2>
+                                        <Button onClick={handleShare} className="bg-indigo-600 text-white font-semibold hover:bg-indigo-700">
+                                            <Share2 className="mr-2 h-4 w-4" />  Share</Button>
+                                    </div>
                                     <form onSubmit={handleSubmit} className="space-y-3">
                                         <Input
                                             type="text"
