@@ -91,7 +91,30 @@ export default function Streamview({creatorId} : {creatorId : string})  {
 
     // add the logic for make the queue empty
     const emptyQueue = async () => {
-        
+        try {
+            const res = await fetch("/api/streams/empty-queue", {
+                method : "POST",
+                headers : {
+                    'content-type' : 'application/json'
+                },
+                body: JSON.stringify({
+                    // spaceId:spaceId
+                })
+            });
+            
+            const data = await res.json();
+            if(res.ok){
+                toast.success(data.message);
+                refreshStream();
+                setIsEmptyQueueDialogOpen(false);
+            } else {
+                toast.error(data.message || "Failed to empty queue")
+            }
+
+        } catch(error) {
+            console.error("Error empty queue", error);
+            toast.error("An erro occured while empty the queue");
+        }
     }
 
     return (
