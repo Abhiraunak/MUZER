@@ -50,45 +50,52 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+    
         if (!inputLink.trim()) {
             toast.error("YouTube link cannot be empty");
             return;
         }
+    
         if (!inputLink.match(YT_REGEX)) {
-            toast.error("Invalid YouTube URL format")
+            toast.error("Invalid YouTube URL format");
             return;
         }
+    
         setLoading(true);
+    
         try {
+            const body = JSON.stringify({
+                creatorId,
+                url: inputLink,
+            });
+    
+            console.log("Sending Request:", body);
+    
             const res = await fetch("/api/streams", {
                 method: "POST",
                 headers: {
-                    "Content-type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    creatorId,
-                    url: inputLink
-                }),
+                body,
             });
-
-            const data = await res.json();
+    
             if (!res.ok) {
-                throw new Error(data.message || "An error occurred")
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Failed to add stream");
             }
-            setQueue([...queue, data]);
+    
+            const data = await res.json();
+            setQueue((prev) => [...prev, data]);
             setInputLink("");
-            toast.success("Song added to queue successfully")
+            toast.success("Song added to queue successfully");
         } catch (error) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("An unexpected error occured")
-            }
+            console.error("Error in handleSubmit:", error);
+            toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-
-    }
+    };
+    
 
     // handle the upvote and downvote 
     const handleVote = (id: string, isUpvote: boolean) => {
@@ -234,16 +241,6 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                                                             )}
                                                             <span>{video.upvotes}</span>
                                                         </Button>
-                                                        {isCreator && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => removeSong(video.id)}
-                                                                className="bg-gray-700 hover:bg-gray-600 text-white transition-colors"
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -274,6 +271,7 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                                         <Button
                                             disabled={loading}
                                             type="submit"
+                                            onClick={handleSubmit}
                                             className="w-full bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
                                         >{loading ? "Loading ..." : "Add to Queue"}
                                         </Button>
