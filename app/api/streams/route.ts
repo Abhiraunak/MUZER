@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prismaClient } from "../lib/db";
 import { YT_REGEX } from "../lib/utils"
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import youtubesearchapi from "youtube-search-api";
 
@@ -29,9 +30,7 @@ export async function POST(req: NextRequest) {
         const res = await youtubesearchapi.GetVideoDetails(extractedId);
         
         const thumbnails = res.thumbnail.thumbnails;
-        if (thumbnails.length > 0) {
-            thumbnails.sort((a: { width: number }, b: { width: number }) => a.width - b.width);
-        }
+        thumbnails.sort((a: {width: number}, b: {width: number}) => a.width < b.width ? -1 : 1);
 
 
         const stream = await prismaClient.stream.create({

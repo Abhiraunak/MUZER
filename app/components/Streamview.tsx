@@ -5,11 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, Share2, X } from "lucide-react";
-import { toast } from "sonner";
-import { YT_REGEX } from "../api/lib/utils";
-import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
-import { DialogContent, DialogDescription, DialogFooter, DialogHeader } from "@/components/ui/dialog";
+import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
 
 interface Video {
     id: string;
@@ -33,152 +29,20 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
     const [loading, setLoading] = useState(false);
     const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
-    const [isEmptyQueueDialogOpen, setIsEmptyQueueDialogOpen] = useState(false);
 
 
-    function refreshStream() {
+    
 
-
+    function handleSubmit(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
+        throw new Error("Function not implemented.");
     }
 
-    useEffect(() => {
-        refreshStream();
-        const interval = setInterval(() => {
-
-        }, REFRESH_INTERVAL_MS)
-    }, [])
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-    
-        if (!inputLink.trim()) {
-            toast.error("YouTube link cannot be empty");
-            return;
-        }
-    
-        if (!inputLink.match(YT_REGEX)) {
-            toast.error("Invalid YouTube URL format");
-            return;
-        }
-    
-        setLoading(true);
-    
-        try {
-            const body = JSON.stringify({
-                creatorId,
-                url: inputLink,
-            });
-    
-            console.log("Sending Request:", body);
-    
-            const res = await fetch("/api/streams", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body,
-            });
-    
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "Failed to add stream");
-            }
-    
-            const data = await res.json();
-            setQueue((prev) => [...prev, data]);
-            setInputLink("");
-            toast.success("Song added to queue successfully");
-        } catch (error) {
-            console.error("Error in handleSubmit:", error);
-            toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-
-    // handle the upvote and downvote 
-    const handleVote = (id: string, isUpvote: boolean) => {
-        setQueue(
-            queue
-                .map((video) =>
-                    video.id === id
-                        ? {
-                            ...video,
-                            upvotes: isUpvote ? video.upvotes + 1 : video.upvotes - 1,
-                            haveUpvoted: !video.haveUpvoted,
-                        }
-                        : video,
-                )
-                .sort((a, b) => b.upvotes - a.upvotes),
-        );
-
-        fetch(`/api/streams/${isUpvote ? "upvote" : "downvote"}`, {
-            method: "POST",
-            body: JSON.stringify({
-                streamId: id,
-                // spaceId:spaceId
-            }),
-        });
-    };
-
-    // add the logic for make the queue empty
-    const emptyQueue = async () => {
-        try {
-            const res = await fetch("/api/streams/empty-queue", {
-                method: "POST",
-                headers: {
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    // spaceId:spaceId
-                })
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                toast.success(data.message);
-                refreshStream();
-                setIsEmptyQueueDialogOpen(false);
-            } else {
-                toast.error(data.message || "Failed to empty queue")
-            }
-
-        } catch (error) {
-            console.error("Error empty queue", error);
-            toast.error("An erro occured while empty the queue");
-        }
+    function handleShare(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
+        throw new Error("Function not implemented.");
     }
 
-    const handleShare = (platform: 'whatsapp' | 'twitter' | 'instagram' | 'clipboard') => {
-        const shareableLink = `${window.location.hostname}/spaces/${spaceId}`
-
-        if (platform === 'clipboard') {
-            navigator.clipboard.writeText(shareableLink).then(() => {
-                toast.success('Link copied to clipboard!')
-            }).catch((err) => {
-                console.error('Could not copy text: ', err)
-                toast.error('Failed to copy link. Please try again.')
-            })
-        } else {
-            let url
-            switch (platform) {
-                case 'whatsapp':
-                    url = `https://wa.me/?text=${encodeURIComponent(shareableLink)}`
-                    break
-                case 'twitter':
-                    url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareableLink)}`
-                    break
-                case 'instagram':
-                    // Instagram doesn't allow direct URL sharing, so we copy the link instead
-                    navigator.clipboard.writeText(shareableLink)
-                    toast.success('Link copied for Instagram sharing!')
-                    return
-                default:
-                    return
-            }
-            window.open(url, '_blank')
-        }
+    function handleVote(id: string, arg1: boolean): void {
+        throw new Error("Function not implemented.");
     }
 
     return (
@@ -293,30 +157,6 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
 
                 </div>
             </div>
-            <Dialog
-                open={isEmptyQueueDialogOpen}
-                onOpenChange={setIsEmptyQueueDialogOpen}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Empty Queue</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to empty the queue? This will remove all
-                            songs from the queue. This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button
-                            variant={"outline"}
-                            onClick={() => setIsEmptyQueueDialogOpen(false)}
-                        >Cancle</Button>
-                        <Button
-                            onClick={emptyQueue}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >Empty Queue</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }
