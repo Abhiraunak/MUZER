@@ -61,8 +61,23 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
         throw new Error("Function not implemented.");
     }
 
-    function handleVote(id: string, arg1: boolean): void {
-        throw new Error("Function not implemented.");
+    const handleVote = (id: string, isUpvoted: boolean) => {
+        setQueue(queue.map(video => 
+            video.id === id 
+            ? {
+                ...video,
+                upvotes: isUpvoted ? video.upvotes + 1 : video.upvotes -1,
+                haveUpvoted: !video.haveUpvoted
+            }
+            : video
+        ).sort((a, b) => (b.upvotes) - (a.upvotes)))
+
+        fetch(`/api/streams/${isUpvoted ? "upvote" : "downvote"}`, {
+            method: "POST",
+            body: JSON.stringify({
+                streamId : id
+            })
+        })
     }
 
     return (
@@ -114,7 +129,7 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                                                                     video.haveUpvoted ? false : true,
                                                                 )
                                                             }
-                                                            className="flex items-center space-x-1 bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+                                                            className="flex items-center space-x-1 bg-gray-800 text-white hover:text-white border-gray-700 hover:bg-gray-700 "
                                                         >
                                                             {video.haveUpvoted ? (
                                                                 <ChevronDown className="h-4 w-4" />
