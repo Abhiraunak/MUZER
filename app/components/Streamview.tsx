@@ -30,11 +30,31 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
     const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
 
+    function refreshStreams() {
 
-    
+    }
 
-    function handleSubmit(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
-        throw new Error("Function not implemented.");
+    useEffect(() => {
+        refreshStreams();
+        const interval = setInterval(() => {
+            refreshStreams();
+        }, REFRESH_INTERVAL_MS)
+    }, [])
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await fetch("/api/streams/", {
+            method: "POST",
+            body: JSON.stringify({
+                creatorId,
+                url: inputLink
+            })
+        });
+        setQueue([...queue, await res.json()])
+        setLoading(false);
+        setInputLink('')
     }
 
     function handleShare(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
@@ -71,12 +91,10 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                                         className="bg-gray-800 border-gray-700 shadow-lg hover:shadow-xl transition-shadow"
                                     >
                                         <CardContent className="p-4 flex flex-col md:flex-row md:space-x-3">
-                                            <Image
-                                                width={160}
-                                                height={160}
+                                            <img
                                                 src={video.smallImg}
                                                 alt={`Thumbnail for ${video.title}`}
-                                                className="md:w-40 mb-5 md:mb-0 object-cover rounded-md"
+                                                className="w-30 h-20 object-cover rounded"
                                             />
                                             <div className="flex-grow">
                                                 <h3 className="font-semibold text-white text-lg mb-2">

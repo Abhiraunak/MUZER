@@ -29,6 +29,10 @@ export async function GET(req: NextRequest){
                 select: {
                     upvotes : true
                 }
+            }, upvotes: {
+                where : {
+                    userId : user.id
+                }
             }
         }
     })
@@ -37,7 +41,8 @@ export async function GET(req: NextRequest){
     return NextResponse.json({
         streams: streams.map(({ _count, ...rest }) => ({
             ...rest,
-            upvotes: _count?.upvotes || 0 // Defaulting to 0 if _count or upvotes is undefined
+            upvotes: _count?.upvotes || 0, // Defaulting to 0 if _count or upvotes is undefined
+            haveVoted : rest.upvotes.length ? true : false
         }))
     });
     
