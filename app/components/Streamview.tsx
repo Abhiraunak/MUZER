@@ -109,7 +109,7 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                                             <img
                                                 src={video.smallImg}
                                                 alt={`Thumbnail for ${video.title}`}
-                                                className="w-30 h-20 object-cover rounded"
+                                                className="w-30 h-full object-cover rounded"
                                             />
                                             <div className="flex-grow">
                                                 <h3 className="font-semibold text-white text-lg mb-2">
