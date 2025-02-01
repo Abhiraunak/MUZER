@@ -26,11 +26,25 @@ const REFRESH_INTERVAL_MS = 10 * 1000;
 
 export default function Streamview({ creatorId }: { creatorId: string }) {
     const [queue, setQueue] = useState<Video[]>([]);
+    const [currentVideo, setCurrentVideo] = useState<Video | null>(null)
     const [loading, setLoading] = useState(false);
     const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
 
-    function refreshStreams() {
+    async function refreshStreams() {
+        const res = await fetch(`/api/streams/?creatorId=${creatorId}`, {
+            credentials: "include"
+        });
+
+        const json = await res.json();
+        setQueue(json.streams.sort((a: any, b: any) => a.upvotes < b.upvotes ? 1 : -1));
+
+        setCurrentVideo(video => {
+            if (video?.id === json.activeStream?.stream?.id) {
+                return video;
+            }
+            return json.activeStream.stream
+        });
 
     }
 
@@ -62,20 +76,20 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
     }
 
     const handleVote = (id: string, isUpvoted: boolean) => {
-        setQueue(queue.map(video => 
-            video.id === id 
-            ? {
-                ...video,
-                upvotes: isUpvoted ? video.upvotes + 1 : video.upvotes -1,
-                haveUpvoted: !video.haveUpvoted
-            }
-            : video
+        setQueue(queue.map(video =>
+            video.id === id
+                ? {
+                    ...video,
+                    upvotes: isUpvoted ? video.upvotes + 1 : video.upvotes - 1,
+                    haveUpvoted: !video.haveUpvoted
+                }
+                : video
         ).sort((a, b) => (b.upvotes) - (a.upvotes)))
 
         fetch(`/api/streams/${isUpvoted ? "upvote" : "downvote"}`, {
             method: "POST",
             body: JSON.stringify({
-                streamId : id
+                streamId: id
             })
         })
     }
