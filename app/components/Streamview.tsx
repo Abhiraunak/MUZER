@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Appbar } from "./Appbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // import Image from "next/image";
 import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
 
@@ -24,12 +24,19 @@ interface Video {
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
-export default function Streamview({ creatorId }: { creatorId: string }) {
+export default function StreamView({
+    creatorId,
+    playVideo = false
+}: {
+    creatorId: string;
+    playVideo: boolean;
+}) {
     const [queue, setQueue] = useState<Video[]>([]);
     const [currentVideo, setCurrentVideo] = useState<Video | null>(null)
     const [loading, setLoading] = useState(false);
     const [inputLink, setInputLink] = useState("");
     const [playNextLoader, setPlayNextLoader] = useState(false);
+    const videoPlayerRef = useRef<HTMLDivElement>();
 
     async function refreshStreams() {
         const res = await fetch(`/api/streams/?creatorId=${creatorId}`, {
@@ -55,6 +62,23 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
         }, REFRESH_INTERVAL_MS)
     }, [])
 
+
+    const playNext = async () => {
+        if (queue.length > 0) {
+            try {
+                setPlayNextLoader(true)
+                const data = await fetch('/api/streams/next', {
+                    method: "GET",
+                })
+                const json = await data.json();
+                setCurrentVideo(json.stream)
+                setQueue(q => q.filter(x => x.id !== json.stream?.id))
+            } catch(e) {
+    
+            }
+            setPlayNextLoader(false)
+        }
+      }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -192,8 +216,30 @@ export default function Streamview({ creatorId }: { creatorId: string }) {
                             <Card className="bg-gray-800 border-gray-700 shodow-lg">
                                 <CardContent className="p-6 space-y-4">
                                     <h2 className="text-2xl font-semibold text-white">Now Playing</h2>
+                                    <Card className="bg-gray-700 border-gray-600">
+                                        <CardContent className="pt-3">
+                                            {currentVideo ? (
+                                                <div>
+                                                    {playVideo ? <>
+                                                        <div ref={videoPlayerRef} className='w-full' />
+                                                        {/* <iframe width={"100%"} height={300} src={`https://www.youtube.com/embed/${currentVideo.extractedId}?autoplay=1`} allow="autoplay"></iframe> */}
+                                                    </> : <>
+                                                        <img
+                                                            src={currentVideo.bigImg}
+                                                            className="w-full h-72 object-cover rounded"
+                                                        />
+                                                        <p className="mt-2 text-center font-semibold text-white">{currentVideo.title}</p>
+                                                    </>}
+                                                </div>
+                                            ) : (
+                                                <p className="text-center  text-gray-400">No video playing</p>
+                                            )}
+
+                                        </CardContent>
+                                    </Card>
                                     <Button
                                         disabled={playNextLoader}
+                                        onClick={playNext}
                                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
                                     > Play Next
                                     </Button>
