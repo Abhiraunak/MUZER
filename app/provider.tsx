@@ -7,5 +7,4 @@ export function Providers({children} : {
     return <SessionProvider>
         {children}
     </SessionProvider>
-
 }

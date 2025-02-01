@@ -4,7 +4,7 @@ import { Appbar } from "./Appbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+// import Image from "next/image";
 import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
 
 interface Video {
