@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 // import Image from "next/image";
 import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Video {
     id: string;
@@ -95,9 +96,31 @@ export default function StreamView({
         setInputLink('')
     }
 
-    function handleShare(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
-        throw new Error("Function not implemented.");
-    }
+    const handleShare = () => {
+        const shareableLink = `${window.location.hostname}/creator/${creatorId}`
+        navigator.clipboard.writeText(shareableLink).then(() => {
+          toast.success('Link copied to clipboard!', {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          })
+        }, (err) => {
+          console.error('Could not copy text: ', err)
+          toast.error('Failed to copy link. Please try again.', {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          })
+        })
+      }
 
     const handleVote = (id: string, isUpvoted: boolean) => {
         setQueue(queue.map(video =>
